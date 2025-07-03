@@ -21,19 +21,26 @@ app.get("/requisicao", function(req, res)
         filtro.push("%" + req.query.NRTEL + "%");
     }
 
-    executeQuery(ssql, filtro, function(err, result)
-    {
-            if (err)
-            {
-                res.status(500).json(err);
-            }
-            else 
-            {
-                res.status(200).json(result);
-            } 
-    }
-)   
+    executeQuery(ssql, filtro, function(err, result) {
+        if (err) {
+            res.status(500).json(err);
+        } else {
+            // Formatar resultado
+            const resultadoFormatado = result.map(row => {
+                return {
+                    FILIAL: row.CDFIL,
+                    "DATA ENTRADA": new Date(row.DTENTR).toLocaleDateString('pt-BR'),
+                    REQUISICAO: `${row.NRRQU}-${row.SERIER}`,
+                    "DESCRIÇÃO": row.DESCR?.trim(),
+                    VOLUME: `${row.VOLUME} ${row.UNIVOL}`.trim()
+                };
+            });
+
+            res.status(200).json(resultadoFormatado);
+        }
+    });
 });
+    
 app.get("/pcp", function(req, res)
 {
     let filtro = [];
