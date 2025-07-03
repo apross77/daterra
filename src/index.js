@@ -17,8 +17,8 @@ app.get("/requisicao", function(req, res)
     let ssql = "SELECT DISTINCT	req.CDFIL, req.DTENTR, req.NRRQU, req.SERIER, itm.DESCR, req.VOLUME, req.UNIVOL FROM FC12100 req INNER JOIN FC12110 itm	ON (req.CDFIL = itm.CDFIL AND req.NRRQU = itm.NRRQU AND req.SERIER = itm.SERIER) INNER JOIN FC07000 cli ON (req.CDCLI = cli.CDCLI) INNER JOIN FC07200 c ON (cli.CDCLI = c.CDCLI) WHERE req.DTENTR > current_date - 120 and itm.ITEMID = 1 and (trim(c.NRDDD))||(trim(NRTEL)) > 0";
 
         if (req.query.NRTEL){
-        ssql += "and (trim(c.NRDDD))||(trim(c.NRTEL)) = ?";
-        filtro.push(req.query.NRTEL);
+        ssql += "and (trim(c.NRDDD))||(trim(c.NRTEL)) like ?";
+        filtro.push("%" + req.query.NRTEL + "%");
     }
 
     executeQuery(ssql, filtro, function(err, result)
