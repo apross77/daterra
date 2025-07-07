@@ -1,7 +1,7 @@
 import firebird from "node-firebird";
 
 const dbOptions = {
-    host: '189.15.209.91',
+    host: '191.55.236.46',
     port: 3050,
     database: 'D:\\FCERTA\\DB\\ALTERDB.IB',
     user: 'SYSDBA',
