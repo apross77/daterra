@@ -40,29 +40,26 @@ app.get("/requisicao", function (req, res) {
     if (req.query.NRTEL) {
         let tel = req.query.NRTEL.replace(/\D/g, '');
 
-        // Remove DDI 55
+        // remove 55
         if (tel.startsWith('55')) {
             tel = tel.substring(2);
         }
 
-        // DDD
         const ddd = tel.substring(0, 2);
-
-        // Número
         let numero = tel.substring(2);
 
-        // Se vier com 9 dígitos, remove o 9 (padrão do seu banco)
+        // padrão do seu banco: 10 dígitos
         if (numero.length === 9 && numero.startsWith('9')) {
             numero = numero.substring(1);
         }
 
         ssql += `
             AND c.NRDDD = ?
-            AND CAST(c.NRTEL AS VARCHAR(20)) = ?
+            AND c.NRTEL = ?
         `;
 
-        filtro.push(parseInt(ddd, 10));
-        filtro.push(numero);
+        filtro.push(parseInt(ddd, 10)); // número
+        filtro.push(numero);            // string SEM CAST
     }
 
     executeQuery(ssql, filtro, function (err, result) {
@@ -70,15 +67,7 @@ app.get("/requisicao", function (req, res) {
             console.error(err);
             res.status(500).json(err);
         } else {
-            const resultadoFormatado = result.map(row => ({
-                FILIAL: row.CDFIL,
-                "DATA ENTRADA": new Date(row.DTENTR).toLocaleDateString('pt-BR'),
-                REQUISICAO: `${row.NRRQU}-${row.SERIER}`,
-                "DESCRIÇÃO": row.DESCR?.trim(),
-                VOLUME: `${row.VOLUME} ${row.UNIVOL}`.trim()
-            }));
-
-            res.status(200).json(resultadoFormatado);
+            res.status(200).json(result);
         }
     });
 });
