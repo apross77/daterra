@@ -35,10 +35,12 @@ if (req.query.NRTEL) {
         ) LIKE '%${tel}%'
     `;
 }
+console.log("SQL FINAL:");
+console.log(ssql);
+console.log("PARAMETROS:");
+console.log(filtro);
 
-
-
-    executeQuery(ssql, filtro, function(err, result) {
+executeQuery(ssql, filtro, function(err, result) {
         if (err) {
             res.status(500).json(err);
         } else {
