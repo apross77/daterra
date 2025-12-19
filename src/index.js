@@ -15,51 +15,68 @@ app.get("/", (req, res) => {
 });
 
 // Rotas
-app.get("/requisicao", function(req, res)
-{
+app.get("/requisicao", function (req, res) {
     let filtro = [];
-    let ssql = "SELECT DISTINCT	req.CDFIL, req.DTENTR, req.NRRQU, req.SERIER, itm.DESCR, req.VOLUME, req.UNIVOL FROM FC12100 req INNER JOIN FC12110 itm	ON (req.CDFIL = itm.CDFIL AND req.NRRQU = itm.NRRQU AND req.SERIER = itm.SERIER) INNER JOIN FC07000 cli ON (req.CDCLI = cli.CDCLI) INNER JOIN FC07200 c ON (cli.CDCLI = c.CDCLI) WHERE req.DTENTR > current_date - 180 and itm.ITEMID = 1 and '55'||(trim(c.NRDDD))||(trim(c.NRTEL)) <> ''";
-
-if (req.query.NRTEL) {
-
-    let tel = req.query.NRTEL.replace(/\D/g, '');
-
-    if (tel.startsWith('55')) {
-        tel = tel.substring(2);
-    }
-
-    const ddd = Number(tel.substring(0, 2)); // 🔥 number
-    const numero = tel.substring(2);
-
-    ssql += `
-        AND c.NRDDD = ?
-        AND CAST(c.NRTEL AS VARCHAR(20)) LIKE ?
+    let ssql = `
+        SELECT DISTINCT
+            req.CDFIL,
+            req.DTENTR,
+            req.NRRQU,
+            req.SERIER,
+            itm.DESCR,
+            req.VOLUME,
+            req.UNIVOL
+        FROM FC12100 req
+        INNER JOIN FC12110 itm
+            ON req.CDFIL = itm.CDFIL
+           AND req.NRRQU = itm.NRRQU
+           AND req.SERIER = itm.SERIER
+        INNER JOIN FC07000 cli ON req.CDCLI = cli.CDCLI
+        INNER JOIN FC07200 c   ON cli.CDCLI = c.CDCLI
+        WHERE req.DTENTR > current_date - 180
+          AND itm.ITEMID = 1
     `;
 
-    filtro.push(ddd);
-    filtro.push(`%${numero}%`);
-}
+    if (req.query.NRTEL) {
+        let tel = req.query.NRTEL.replace(/\D/g, '');
 
+        // Remove DDI 55
+        if (tel.startsWith('55')) {
+            tel = tel.substring(2);
+        }
 
-console.log("SQL FINAL:");
-console.log(ssql);
-console.log("PARAMETROS:");
-console.log(filtro);
+        // DDD
+        const ddd = tel.substring(0, 2);
 
-executeQuery(ssql, filtro, function(err, result) {
+        // Número
+        let numero = tel.substring(2);
+
+        // Se vier com 9 dígitos, remove o 9 (padrão do seu banco)
+        if (numero.length === 9 && numero.startsWith('9')) {
+            numero = numero.substring(1);
+        }
+
+        ssql += `
+            AND c.NRDDD = ?
+            AND CAST(c.NRTEL AS VARCHAR(20)) = ?
+        `;
+
+        filtro.push(parseInt(ddd, 10));
+        filtro.push(numero);
+    }
+
+    executeQuery(ssql, filtro, function (err, result) {
         if (err) {
+            console.error(err);
             res.status(500).json(err);
         } else {
-            // Formatar resultado
-            const resultadoFormatado = result.map(row => {
-                return {
-                    FILIAL: row.CDFIL,
-                    "DATA ENTRADA": new Date(row.DTENTR).toLocaleDateString('pt-BR'),
-                    REQUISICAO: `${row.NRRQU}-${row.SERIER}`,
-                    "DESCRIÇÃO": row.DESCR?.trim(),
-                    VOLUME: `${row.VOLUME} ${row.UNIVOL}`.trim()
-                };
-            });
+            const resultadoFormatado = result.map(row => ({
+                FILIAL: row.CDFIL,
+                "DATA ENTRADA": new Date(row.DTENTR).toLocaleDateString('pt-BR'),
+                REQUISICAO: `${row.NRRQU}-${row.SERIER}`,
+                "DESCRIÇÃO": row.DESCR?.trim(),
+                VOLUME: `${row.VOLUME} ${row.UNIVOL}`.trim()
+            }));
 
             res.status(200).json(resultadoFormatado);
         }
