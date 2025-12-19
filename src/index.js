@@ -22,25 +22,20 @@ app.get("/requisicao", function(req, res)
 
 if (req.query.NRTEL) {
 
-    // Somente números
     let tel = req.query.NRTEL.replace(/\D/g, '');
 
-    // Remove 55 se vier no começo
     if (tel.startsWith('55')) {
         tel = tel.substring(2);
     }
 
-   ssql += `
-    AND (
-      TRIM('' || c.NRDDD) ||
-      TRIM('' || c.NRTEL)
-
-    ) LIKE ?
-`;
-
-
-    filtro.push('%' + tel + '%');
+    ssql += `
+        AND (
+            TRIM('' || c.NRDDD) ||
+            TRIM('' || c.NRTEL)
+        ) LIKE '%${tel}%'
+    `;
 }
+
 
 
     executeQuery(ssql, filtro, function(err, result) {
