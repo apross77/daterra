@@ -49,13 +49,15 @@ if (req.query.NRTEL) {
     const telBusca = ddd + numeroFormatado;
 
     ssql += `
-        AND (
-            TRIM(LPAD(TRIM(c.NRDDD), 2, '0') || LPAD(TRIM(c.NRTEL), 9, '0')) = ?
-            OR TRIM(LPAD(TRIM(c.NRDDD2), 2, '0') || LPAD(TRIM(c.NRTEL2), 9, '0')) = ?
-        )
-    `;
+    AND (
+        TRIM(LPAD(TRIM(c.NRDDD), 2, '0') || LPAD(TRIM(c.NRTEL), 9, '0')) = ?
+        OR TRIM(LPAD(TRIM(c.NRDDD2), 2, '0') || LPAD(TRIM(c.NRTEL2), 9, '0')) = ?
+        OR TRIM(LPAD(TRIM(c.NRDDDFAX), 2, '0') || LPAD(TRIM(c.NRFAX), 9, '0')) = ?
+    )
+`;
 
-    filtro.push(telBusca, telBusca);
+filtro.push(telBusca, telBusca, telBusca);
+
 
     console.log("Telefone normalizado:", telBusca);
 }
