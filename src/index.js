@@ -28,13 +28,18 @@ if (req.query.NRTEL) {
         tel = tel.substring(2);
     }
 
+    const ddd = tel.substring(0, 2);
+    const numero = tel.substring(2);
+
     ssql += `
-        AND (
-            TRIM('' || c.NRDDD) ||
-            TRIM('' || c.NRTEL)
-        ) LIKE '%${tel}%'
+        AND c.NRDDD = ?
+        AND CAST(c.NRTEL AS VARCHAR(20)) LIKE CAST(? AS VARCHAR(20))
     `;
+
+    filtro.push(ddd);
+    filtro.push('%' + numero + '%');
 }
+
 console.log("SQL FINAL:");
 console.log(ssql);
 console.log("PARAMETROS:");
