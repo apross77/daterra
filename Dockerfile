@@ -7,8 +7,12 @@ RUN npm install
 
 COPY . .
 
-# Porta definida pelo EasyPanel (documentação)
 EXPOSE 4000
 
+# 🔥 HEALTHCHECK EXPLÍCITO
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:4000/ || exit 1
+
 CMD ["npm", "start"]
+
 

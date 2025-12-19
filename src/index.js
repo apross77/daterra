@@ -11,10 +11,7 @@ app.use(express.json());
 app.use(cors());
 
 app.get("/", (req, res) => {
-    res.status(200).json({
-        status: "ok",
-        message: "API online"
-    });
+    res.status(200).send("OK");
 });
 
 // Rotas
