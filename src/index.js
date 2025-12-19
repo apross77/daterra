@@ -69,7 +69,7 @@ app.get("/pcp", function(req, res)
     let ssql = "SELECT req.dtentr, req.cdcli, req.nomepa, req.nrrqu, req.serier, pcp.cdetapa, pcp.data, pcp.hora, eta.descricao FROM FC12100 req LEFT JOIN (SELECT p1.cdfil, p1.nrrqu, p1.serier, p1.cdetapa, p1.data, p1.hora FROM FC12500 p1 JOIN (SELECT p2.nrrqu, p2.serier, p2.cdfil, MAX(CAST(p2.data AS VARCHAR(10)) || ' ' || CAST(p2.hora AS VARCHAR(15))) AS max_datahora FROM FC12500 p2 WHERE p2.cdopera = 01 GROUP BY p2.nrrqu, p2.serier, p2.cdfil) ult ON p1.nrrqu = ult.nrrqu AND p1.serier = ult.serier AND p1.cdfil = ult.cdfil AND (CAST(p1.data AS VARCHAR(10)) || ' ' || CAST(p1.hora AS VARCHAR(15))) = ult.max_datahora WHERE p1.cdopera = 01) pcp ON req.cdfil = pcp.cdfil AND req.nrrqu = pcp.nrrqu AND req.serier = pcp.serier INNER JOIN FC12540 eta ON pcp.cdetapa = eta.cdetapa WHERE req.DTENTR >= current_date - 120 AND req.tpformafarma NOT IN (7, 8) AND req.cdfil = 1 and req.NRRQU > 0";
 
     if (req.query.NRRQU){
-        ssql += "and req.NRRQU = ?";
+        ssql += " and req.NRRQU = ?";
         filtro.push(req.query.NRRQU);
     }
 
