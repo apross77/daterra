@@ -32,8 +32,9 @@ if (req.query.NRTEL) {
 
    ssql += `
     AND (
-        TRIM(CAST(c.NRDDD AS CHAR(3))) ||
-        TRIM(CAST(c.NRTEL AS CHAR(15)))
+      TRIM('' || c.NRDDD) ||
+      TRIM('' || c.NRTEL)
+
     ) LIKE ?
 `;
 
