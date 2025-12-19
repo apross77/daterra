@@ -30,12 +30,13 @@ if (req.query.NRTEL) {
         tel = tel.substring(2);
     }
 
-    ssql += `
-        AND (
-            CAST(c.NRDDD AS VARCHAR(3)) ||
-            CAST(c.NRTEL AS VARCHAR(20))
-        ) LIKE ?
-    `;
+   ssql += `
+    AND (
+        TRIM(CAST(c.NRDDD AS CHAR(3))) ||
+        TRIM(CAST(c.NRTEL AS CHAR(15)))
+    ) LIKE ?
+`;
+
 
     filtro.push('%' + tel + '%');
 }
