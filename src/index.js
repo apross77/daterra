@@ -37,34 +37,29 @@ app.get("/requisicao", function (req, res) {
           AND itm.ITEMID = 1
     `;
 
-    if (req.query.NRTEL) {
-        let tel = req.query.NRTEL.replace(/\D/g, '');
+if (req.query.NRTEL) {
+    let tel = req.query.NRTEL.replace(/\D/g, '');
 
-        // remove 55
-        if (tel.startsWith('55')) tel = tel.substring(2);
+    if (tel.startsWith('55')) tel = tel.substring(2);
 
-        const ddd = tel.substring(0, 2);
-        let numero = tel.substring(2);
+    const ddd = tel.substring(0, 2);
+    let numero = tel.substring(2);
 
-        // remove 9 se vier com 9 dígitos
-        if (numero.length === 9 && numero.startsWith('9')) {
-            numero = numero.substring(1);
-        }
+    // não remova o 9 ainda, teste como está no banco
+    // numero = numero.length === 9 && numero.startsWith('9') ? numero.substring(1) : numero;
 
-        // 🔥 agora garantimos 9 dígitos com zeros à esquerda
-        const numeroFormatado = numero.padStart(9, '0');
-        const telBusca = ddd + numeroFormatado;
+    const numeroFormatado = numero.padStart(9, '0');
+    const telBusca = ddd + numeroFormatado;
 
-        ssql += `
-            AND TRIM(c.NRDDD) || LPAD(TRIM(c.NRTEL), 9, '0') = ?
-        `;
+    ssql += `
+        AND TRIM(c.NRDDD) || LPAD(TRIM(c.NRTEL), 9, '0') = TRIM(?)
+    `;
 
-        filtro.push(telBusca);
+    filtro.push(telBusca);
 
-        // debug para conferir
-        console.log("Telefone normalizado:", telBusca);
-    }
-
+    console.log("Telefone normalizado:", telBusca);
+}
+   
     executeQuery(ssql, filtro, function (err, result) {
         if (err) {
             console.error(err);
