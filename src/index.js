@@ -52,8 +52,8 @@ if (req.query.NRTEL) {
     const telBusca = ddd + numeroFormatado;
 
     ssql += `
-        AND TRIM(c.NRDDD) || LPAD(TRIM(c.NRTEL), 9, '0') = TRIM(?)
-    `;
+    AND TRIM(LPAD(TRIM(c.NRDDD), 2, '0') || LPAD(TRIM(c.NRTEL), 9, '0')) = ?
+`;
 
     filtro.push(telBusca);
 
