@@ -51,14 +51,18 @@ app.get("/requisicao", function (req, res) {
             numero = numero.substring(1);
         }
 
-        // 🔥 PARAMETRO NORMALIZADO
-        const telBusca = ddd + numero;
+        // 🔥 agora garantimos 9 dígitos com zeros à esquerda
+        const numeroFormatado = numero.padStart(9, '0');
+        const telBusca = ddd + numeroFormatado;
 
         ssql += `
             AND TRIM(c.NRDDD) || LPAD(TRIM(c.NRTEL), 9, '0') = ?
         `;
 
         filtro.push(telBusca);
+
+        // debug para conferir
+        console.log("Telefone normalizado:", telBusca);
     }
 
     executeQuery(ssql, filtro, function (err, result) {
