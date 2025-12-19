@@ -45,17 +45,17 @@ if (req.query.NRTEL) {
     const ddd = tel.substring(0, 2);
     let numero = tel.substring(2);
 
-    // não remova o 9 ainda, teste como está no banco
-    // numero = numero.length === 9 && numero.startsWith('9') ? numero.substring(1) : numero;
-
     const numeroFormatado = numero.padStart(9, '0');
     const telBusca = ddd + numeroFormatado;
 
     ssql += `
-    AND TRIM(LPAD(TRIM(c.NRDDD), 2, '0') || LPAD(TRIM(c.NRTEL), 9, '0')) = ?
-`;
+        AND (
+            TRIM(LPAD(TRIM(c.NRDDD), 2, '0') || LPAD(TRIM(c.NRTEL), 9, '0')) = ?
+            OR TRIM(LPAD(TRIM(c.NRDDD2), 2, '0') || LPAD(TRIM(c.NRTEL2), 9, '0')) = ?
+        )
+    `;
 
-    filtro.push(telBusca);
+    filtro.push(telBusca, telBusca);
 
     console.log("Telefone normalizado:", telBusca);
 }
