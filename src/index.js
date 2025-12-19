@@ -33,7 +33,7 @@ app.get("/requisicao", async (req, res) => {
          AND req.NRRQU = itm.NRRQU
          AND req.SERIER = itm.SERIER
       INNER JOIN FC07000 cli ON req.CDCLI = cli.CDCLI
-      INNER JOIN FCO7200 c   ON cli.CDCLI = c.CDCLI
+      INNER JOIN FC07200 c   ON cli.CDCLI = c.CDCLI
       WHERE req.DTENTR > current_date - 180
         AND itm.ITEMID = 1
     `;
@@ -111,11 +111,4 @@ app.get("/pcp", async (req, res) => {
     res.status(200).json(result);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Erro na consulta" });
-  }
-});
-
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Servidor no ar na porta ${PORT}`);
-});
+    res.status(500).json({ error: "Erro na consulta
