@@ -41,25 +41,24 @@ app.get("/requisicao", function (req, res) {
         let tel = req.query.NRTEL.replace(/\D/g, '');
 
         // remove 55
-        if (tel.startsWith('55')) {
-            tel = tel.substring(2);
-        }
+        if (tel.startsWith('55')) tel = tel.substring(2);
 
         const ddd = tel.substring(0, 2);
         let numero = tel.substring(2);
 
-        // padrão do seu banco: 10 dígitos
+        // remove 9 se vier com 9 dígitos
         if (numero.length === 9 && numero.startsWith('9')) {
             numero = numero.substring(1);
         }
 
+        // 🔥 PARAMETRO NORMALIZADO
+        const telBusca = ddd + numero;
+
         ssql += `
-            AND c.NRDDD = ?
-            AND c.NRTEL = ?
+            AND TRIM(c.NRDDD) || LPAD(TRIM(c.NRTEL), 9, '0') = ?
         `;
 
-        filtro.push(parseInt(ddd, 10)); // número
-        filtro.push(numero);            // string SEM CAST
+        filtro.push(telBusca);
     }
 
     executeQuery(ssql, filtro, function (err, result) {
