@@ -124,25 +124,10 @@ app.listen(PORT, '0.0.0.0', () => {
 app.get("/pagos", function (req, res) {
     let filtro = [];
     let ssql = `
-   SELECT FIRST 10 
-      a.cdfil,
-      a.cdtml,
-      a.dtope,
-      a.nrcpm,
-      a.nrentg,
-      a.vrrcb,
-      b.itemid,
-      b.tpitm,
-      b.cdpro,
-      b.quant,
-      b.vrtot
-  FROM fc31100 a
-  INNER JOIN fc31110 b
-    ON a.cdfil = b.cdfil
-   AND a.cdtml = b.cdtml
-   AND a.nrcpm = b.nrcpm
-  WHERE a.dtope = current_date - 7
-    AND a.nrentg > 0
+   SELECT FIRST 10 *
+FROM fc31100
+WHERE dtope = current_date - 7
+AND nrentg > 0
     `;
 
     if (req.query.NRENTG) {
