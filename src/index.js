@@ -143,8 +143,6 @@ app.get("/pagos", function (req, res) {
    AND a.nrcpm = b.nrcpm
   WHERE a.dtope = current_date - 7
     AND a.nrentg > 0
-`;
-
     `;
 
     if (req.query.NRENTG) {
