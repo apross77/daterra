@@ -155,12 +155,11 @@ app.get("/pagos", function (req, res) {
     });
 });
 
-app.get("/teste-db", function (req, res) {
-    executeQuery("SELECT 1 FROM RDB$DATABASE", [], function (err, result) {
-        if (err) {
-            res.status(500).json(err);
-        } else {
-            res.status(200).json(result);
-        }
-    });
+app.get("/teste-db", async (req, res) => {
+  try {
+    const r = await executeQuery("SELECT 1 FROM RDB$DATABASE");
+    res.json(r);
+  } catch (e) {
+    res.status(500).json(e);
+  }
 });
