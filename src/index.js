@@ -154,3 +154,13 @@ app.get("/pagos", function (req, res) {
         }
     });
 });
+
+app.get("/teste-db", function (req, res) {
+    executeQuery("SELECT 1 FROM RDB$DATABASE", [], function (err, result) {
+        if (err) {
+            res.status(500).json(err);
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
