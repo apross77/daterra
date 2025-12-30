@@ -121,36 +121,36 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 // 🔹 Rota /pagos (OTIMIZADA)
-app.get("/pagos", function (req, res) {
+app.get("/pagos", async (req, res) => {
+  try {
     let filtro = [];
     let ssql = `
-   SELECT FIRST 10 *
-FROM fc31100
-WHERE dtope = current_date - 7
-AND nrentg > 0
+      SELECT
+        a.cdfil,
+        a.cdtml,
+        a.dtope,
+        a.nrcpm,
+        b.nrentg,
+        b.vrtot,
+        a.vrrcb
+      FROM fc31100 a
+      INNER JOIN fc31110 b
+        ON a.cdfil = b.cdfil
+       AND a.cdtml = b.cdtml
+       AND a.nrcpm = b.nrcpm
+      WHERE a.dtope = CURRENT_DATE - 7
+        AND b.nrentg > 0
     `;
 
     if (req.query.NRENTG) {
-        const nrentg = req.query.NRENTG.replace(/\D/g, '');
-        ssql += ` AND a.nrentg = ? `;
-        filtro.push(nrentg);
+      ssql += " AND b.nrentg = ?";
+      filtro.push(parseInt(req.query.NRENTG, 10));
     }
 
-    executeQuery(ssql, filtro, function (err, result) {
-        if (err) {
-            console.error("Erro /pagos:", err);
-            res.status(500).json(err);
-        } else {
-            res.status(200).json(result);
-        }
-    });
-});
-
-app.get("/teste-db", async (req, res) => {
-  try {
-    const r = await executeQuery("SELECT 1 FROM RDB$DATABASE");
-    res.json(r);
-  } catch (e) {
-    res.status(500).json(e);
+    const result = await executeQuery(ssql, filtro);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Erro /pagos:", err);
+    res.status(500).json(err);
   }
 });
