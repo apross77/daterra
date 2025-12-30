@@ -124,8 +124,7 @@ app.listen(PORT, '0.0.0.0', () => {
 app.get("/pagos", function (req, res) {
     let filtro = [];
     let ssql = `
- let ssql = `
-  SELECT FIRST 10 
+   SELECT FIRST 10 
       a.cdfil,
       a.cdtml,
       a.dtope,
