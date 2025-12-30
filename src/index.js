@@ -120,49 +120,34 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor no ar na porta ${PORT}`);
 });
 
-// 🔹 Rota /pagos
+// 🔹 Rota /pagos (OTIMIZADA)
 app.get("/pagos", function (req, res) {
     let filtro = [];
     let ssql = `
         SELECT
             a.cdfil,
-            a.cdtml,
             a.dtope,
-            a.nrcpm,
             a.nrentg,
-            b.itemid,
-            b.tpitm,
-            b.cdpro,
-            b.quant,
-            b.vrtot,
+            a.nrcpm,
             a.vrrcb,
             CASE
                 WHEN a.vrrcb > 0 THEN 'S'
                 ELSE 'N'
             END AS PAGA
         FROM fc31100 a
-        INNER JOIN fc31110 b
-            ON a.cdfil = b.cdfil
-           AND a.cdtml = b.cdtml
-           AND a.nrcpm = b.nrcpm
-        WHERE a.dtope = current_date - 7
+        WHERE a.dtope >= current_date - 7
           AND a.nrentg > 0
     `;
 
     if (req.query.NRENTG) {
         const nrentg = req.query.NRENTG.replace(/\D/g, '');
-
-        ssql += `
-            AND a.nrentg = ?
-        `;
-
+        ssql += ` AND a.nrentg = ? `;
         filtro.push(nrentg);
-        console.log("Consulta requisição paga:", nrentg);
     }
 
     executeQuery(ssql, filtro, function (err, result) {
         if (err) {
-            console.error("Erro SQL /pagos:", err);
+            console.error("Erro /pagos:", err);
             res.status(500).json(err);
         } else {
             res.status(200).json(result);
