@@ -120,8 +120,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor no ar na porta ${PORT}`);
 });
 
-// 🔹 Rota /pagos (OTIMIZADA)
-app.get("/pagos", async (req, res) => {
+// 🔹 Rota /pagos (Consulta por romaneio)
+app.get("/pagos-romaneio", async (req, res) => {
   try {
     let filtro = [];
 
@@ -163,5 +163,50 @@ app.get("/pagos", async (req, res) => {
   } catch (err) {
     console.error("Erro /pagos:", err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// 🔹 Rota /pagos (Consulta por Requisição)
+app.get("/pagos-produto", async (req, res) => {
+  try {
+    const { CDFIL, CDPRO } = req.query;
+
+    if (!CDFIL || !CDPRO) {
+      return res.status(400).json({
+        error: "Parâmetros obrigatórios: CDFIL e CDPRO"
+      });
+    }
+
+    const filtro = [
+      Number(CDFIL),
+      Number(CDPRO)
+    ];
+
+    const ssql = `
+      SELECT
+        a.cdfil,
+        a.cdtml,
+        a.dtope,
+        a.nrcpm,
+        b.cdpro,
+        b.quant,
+        b.vrtot,
+        a.vrrcb
+      FROM fc31100 a
+      INNER JOIN fc31110 b
+        ON a.cdfil = b.cdfil
+       AND a.cdtml = b.cdtml
+       AND a.nrcpm = b.nrcpm
+      WHERE CAST(a.dtope AS DATE) = CURRENT_DATE - 7
+        AND a.cdfil = ?
+        AND b.cdpro = ?
+    `;
+
+    const result = await executeQuery(ssql, filtro);
+    res.json(result);
+
+  } catch (err) {
+    console.error("Erro /pagos-produto:", err);
+    res.status(500).json(err);
   }
 });
