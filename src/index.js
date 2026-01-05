@@ -134,6 +134,7 @@ app.get("/pagos", async (req, res) => {
     let sql = `
       SELECT
           a.nrentg,
+          b.cdpro,
           SUM(b.vrtot) AS valor_total,
           a.vrrcb AS valor_recebido,
           CASE
