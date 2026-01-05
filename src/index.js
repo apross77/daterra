@@ -165,6 +165,7 @@ app.get("/pagos", async (req, res) => {
     sql += `
       GROUP BY
           a.nrentg,
+          b.cdpro,
           a.vrrcb
     `;
 
