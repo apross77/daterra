@@ -121,53 +121,48 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 // 🔹 Rota /pagos (Consulta por romaneio)
-app.get("/pagos-romaneio", async (req, res) => {
+app.get("/pagamento-entrega", async (req, res) => {
   try {
-    let filtro = [];
+    const { NRENTG } = req.query;
 
-    let ssql = `
-      SELECT
-          a.cdfil,
-          a.cdtml,
-          a.dtope,
-          a.nrcpm,
-          a.nrentg,
-          a.vrrcb,
-          b.itemid,
-          b.tpitm,
-          b.cdpro,
-          b.quant,
-          b.vrtot
-      FROM fc31100 a
-      INNER JOIN fc31110 b
-        ON a.cdfil = b.cdfil
-       AND a.cdtml = b.cdtml
-       AND a.nrcpm = b.nrcpm
-      WHERE a.dtope = current_date - 7
-        AND a.nrentg > 0
-    `;
-
-    if (req.query.NRENTG) {
-      const nrentg = parseInt(req.query.NRENTG, 10);
-
-      ssql += ` AND a.nrentg = ? `;
-      filtro.push(nrentg);
+    if (!NRENTG) {
+      return res.status(400).json({
+        error: "Parâmetro obrigatório: NRENTG"
+      });
     }
 
-    console.log("SQL:", ssql);
-    console.log("PARAMS:", filtro);
+    const sql = `
+      SELECT
+        nrentg,
+        SUM(vrtot) AS total,
+        SUM(COALESCE(vrrcb, 0)) AS recebido,
+        CASE
+          WHEN SUM(COALESCE(vrrcb, 0)) >= SUM(vrtot) THEN 'PAGA'
+          WHEN SUM(COALESCE(vrrcb, 0)) > 0 THEN 'PARCIAL'
+          ELSE 'NAO_PAGA'
+        END AS status
+      FROM fc31110
+      WHERE nrentg = ?
+      GROUP BY nrentg
+    `;
 
-    const result = await executeQuery(ssql, filtro);
+    const result = await executeQuery(sql, [Number(NRENTG)]);
 
-    res.status(200).json(result);
+    res.json(result.length ? result[0] : {
+      nrentg: Number(NRENTG),
+      total: 0,
+      recebido: 0,
+      status: "NAO_ENCONTRADA"
+    });
   } catch (err) {
-    console.error("Erro /pagos:", err);
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json(err);
   }
 });
 
+
 // 🔹 Rota /pagos (Consulta por Requisição)
-app.get("/pagos-produto", async (req, res) => {
+app.get("/pagamento-produto", async (req, res) => {
   try {
     const { CDFIL, CDPRO } = req.query;
 
@@ -177,36 +172,40 @@ app.get("/pagos-produto", async (req, res) => {
       });
     }
 
-    const filtro = [
-      Number(CDFIL),
-      Number(CDPRO)
-    ];
-
-    const ssql = `
+    const sql = `
       SELECT
-        a.cdfil,
-        a.cdtml,
-        a.dtope,
-        a.nrcpm,
-        b.cdpro,
-        b.quant,
-        b.vrtot,
-        a.vrrcb
-      FROM fc31100 a
-      INNER JOIN fc31110 b
-        ON a.cdfil = b.cdfil
-       AND a.cdtml = b.cdtml
-       AND a.nrcpm = b.nrcpm
-      WHERE CAST(a.dtope AS DATE) = CURRENT_DATE - 7
-        AND a.cdfil = ?
-        AND b.cdpro = ?
+        cdfil,
+        cdpro,
+        SUM(vrtot) AS total,
+        SUM(COALESCE(vrrcb, 0)) AS recebido,
+        CASE
+          WHEN SUM(COALESCE(vrrcb, 0)) >= SUM(vrtot) THEN 'PAGA'
+          WHEN SUM(COALESCE(vrrcb, 0)) > 0 THEN 'PARCIAL'
+          ELSE 'NAO_PAGA'
+        END AS status
+      FROM fc31110
+      WHERE cdfil = ?
+        AND cdpro = ?
+      GROUP BY
+        cdfil,
+        cdpro
     `;
 
-    const result = await executeQuery(ssql, filtro);
-    res.json(result);
+    const result = await executeQuery(sql, [
+      Number(CDFIL),
+      Number(CDPRO)
+    ]);
+
+    res.json(result.length ? result[0] : {
+      cdfil: Number(CDFIL),
+      cdpro: Number(CDPRO),
+      total: 0,
+      recebido: 0,
+      status: "NAO_ENCONTRADO"
+    });
 
   } catch (err) {
-    console.error("Erro /pagos-produto:", err);
+    console.error(err);
     res.status(500).json(err);
   }
 });
