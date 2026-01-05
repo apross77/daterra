@@ -124,33 +124,44 @@ app.listen(PORT, '0.0.0.0', () => {
 app.get("/pagos", async (req, res) => {
   try {
     let filtro = [];
+
     let ssql = `
       SELECT
-        a.cdfil,
-        a.cdtml,
-        a.dtope,
-        a.nrcpm,
-        b.nrentg,
-        b.vrtot,
-        a.vrrcb
+          a.cdfil,
+          a.cdtml,
+          a.dtope,
+          a.nrcpm,
+          a.nrentg,
+          a.vrrcb,
+          b.itemid,
+          b.tpitm,
+          b.cdpro,
+          b.quant,
+          b.vrtot
       FROM fc31100 a
       INNER JOIN fc31110 b
         ON a.cdfil = b.cdfil
        AND a.cdtml = b.cdtml
        AND a.nrcpm = b.nrcpm
-      WHERE a.dtope = CURRENT_DATE - 7
-        AND b.nrentg > 0
+      WHERE a.dtope = current_date - 7
+        AND a.nrentg > 0
     `;
 
     if (req.query.NRENTG) {
-      ssql += " AND b.nrentg = ?";
-      filtro.push(parseInt(req.query.NRENTG, 10));
+      const nrentg = parseInt(req.query.NRENTG, 10);
+
+      ssql += ` AND a.nrentg = ? `;
+      filtro.push(nrentg);
     }
 
+    console.log("SQL:", ssql);
+    console.log("PARAMS:", filtro);
+
     const result = await executeQuery(ssql, filtro);
+
     res.status(200).json(result);
   } catch (err) {
     console.error("Erro /pagos:", err);
-    res.status(500).json(err);
+    res.status(500).json({ error: err.message });
   }
 });
