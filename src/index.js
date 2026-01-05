@@ -121,59 +121,56 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 // 🔹 Rota /pagos (Consulta por romaneio ou requisicao)
-app.get("/pagamento", async (req, res) => {
+app.get("/pagos", async (req, res) => {
   try {
-    const { NRENTG, CDFIL, CDPRO } = req.query;
+    const { NRENTG, CDPRO } = req.query;
 
-    // validação
-    const porEntrega = !!NRENTG;
-    const porProduto = !!CDFIL && !!CDPRO;
-
-    if (!porEntrega && !porProduto) {
+    if (!NRENTG && !CDPRO) {
       return res.status(400).json({
-        error: "Informe NRENTG ou CDFIL + CDPRO"
+        error: "Informe NRENTG ou CDPRO"
       });
     }
 
-    if (porEntrega && porProduto) {
-      return res.status(400).json({
-        error: "Use apenas um tipo de filtro por vez"
-      });
-    }
-
-    const sql = `
+    let sql = `
       SELECT
-        SUM(vrtot) AS total,
-        SUM(COALESCE(vrrcb, 0)) AS recebido,
-        CASE
-          WHEN SUM(COALESCE(vrrcb, 0)) >= SUM(vrtot) THEN 'PAGA'
-          WHEN SUM(COALESCE(vrrcb, 0)) > 0 THEN 'PARCIAL'
-          ELSE 'NAO_PAGA'
-        END AS status
-      FROM fc31110
-      WHERE
-        (? IS NULL OR nrentg = ?)
-      AND
-        (? IS NULL OR (cdfil = ? AND cdpro = ?))
+          a.nrentg,
+          SUM(b.vrtot) AS valor_total,
+          a.vrrcb AS valor_recebido,
+          CASE
+              WHEN COALESCE(a.vrrcb, 0) >= SUM(b.vrtot) THEN 'PAGA'
+              WHEN COALESCE(a.vrrcb, 0) > 0 THEN 'PARCIAL'
+              ELSE 'NAO_PAGA'
+          END AS status
+      FROM fc31100 a
+      JOIN fc31110 b
+        ON b.cdfil  = a.cdfil
+       AND b.nrentg = a.nrentg
+      WHERE a.nrentg > 0
     `;
 
-    const params = porEntrega
-      ? [Number(NRENTG), Number(NRENTG), null, null, null]
-      : [null, null, Number(CDFIL), Number(CDFIL), Number(CDPRO)];
+    const params = [];
+
+    if (NRENTG) {
+      sql += " AND a.nrentg = CAST(? AS INTEGER)";
+      params.push(Number(NRENTG));
+    }
+
+    if (CDPRO) {
+      sql += " AND b.cdpro = CAST(? AS INTEGER)";
+      params.push(Number(CDPRO));
+    }
+
+    sql += `
+      GROUP BY
+          a.nrentg,
+          a.vrrcb
+    `;
 
     const result = await executeQuery(sql, params);
-
-    res.json({
-      filtro: porEntrega
-        ? { tipo: "ENTREGA", nrentg: Number(NRENTG) }
-        : { tipo: "PRODUTO", cdfil: Number(CDFIL), cdpro: Number(CDPRO) },
-      total: result[0]?.TOTAL ?? 0,
-      recebido: result[0]?.RECEBIDO ?? 0,
-      status: result[0]?.STATUS ?? "NAO_ENCONTRADO"
-    });
+    res.status(200).json(result);
 
   } catch (err) {
     console.error(err);
-    res.status(500).json(err);
+    res.status(500).json({ error: "Erro ao consultar pagamentos" });
   }
 });
