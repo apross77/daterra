@@ -143,9 +143,10 @@ app.get("/pagos", async (req, res) => {
           END AS status
       FROM fc31100 a
       JOIN fc31110 b
-        ON b.cdfil  = a.cdfil
-       AND b.nrentg = a.nrentg
-      WHERE a.nrentg > 0
+        ON b.cdfil = a.cdfil
+       AND b.cdtml = a.cdtml
+       AND b.nrcpm = a.nrcpm
+      WHERE 1=1
     `;
 
     const params = [];
