@@ -168,7 +168,15 @@ app.get("/pagos", async (req, res) => {
     `;
 
     const result = await executeQuery(sql, params);
-    res.status(200).json(result);
+
+    if (!result || result.length === 0) {
+      return res.status(200).json({
+        message: "Nenhum resultado encontrado. Tente consultar usando o outro filtro (NRENTG ou CDPRO).",
+        data: []
+      });
+    }
+
+    res.status(200).json({ data: result });
 
   } catch (err) {
     console.error(err);
