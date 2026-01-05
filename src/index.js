@@ -120,20 +120,29 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor no ar na porta ${PORT}`);
 });
 
-// 🔹 Rota /pagos (Consulta por romaneio)
-app.get("/pagamento-entrega", async (req, res) => {
+// 🔹 Rota /pagos (Consulta por romaneio ou requisicao)
+app.get("/pagamento", async (req, res) => {
   try {
-    const { NRENTG } = req.query;
+    const { NRENTG, CDFIL, CDPRO } = req.query;
 
-    if (!NRENTG) {
+    // validação
+    const porEntrega = !!NRENTG;
+    const porProduto = !!CDFIL && !!CDPRO;
+
+    if (!porEntrega && !porProduto) {
       return res.status(400).json({
-        error: "Parâmetro obrigatório: NRENTG"
+        error: "Informe NRENTG ou CDFIL + CDPRO"
+      });
+    }
+
+    if (porEntrega && porProduto) {
+      return res.status(400).json({
+        error: "Use apenas um tipo de filtro por vez"
       });
     }
 
     const sql = `
       SELECT
-        nrentg,
         SUM(vrtot) AS total,
         SUM(COALESCE(vrrcb, 0)) AS recebido,
         CASE
@@ -142,66 +151,25 @@ app.get("/pagamento-entrega", async (req, res) => {
           ELSE 'NAO_PAGA'
         END AS status
       FROM fc31110
-      WHERE nrentg = ?
-      GROUP BY nrentg
+      WHERE
+        (? IS NULL OR nrentg = ?)
+      AND
+        (? IS NULL OR (cdfil = ? AND cdpro = ?))
     `;
 
-    const result = await executeQuery(sql, [Number(NRENTG)]);
+    const params = porEntrega
+      ? [Number(NRENTG), Number(NRENTG), null, null, null]
+      : [null, null, Number(CDFIL), Number(CDFIL), Number(CDPRO)];
 
-    res.json(result.length ? result[0] : {
-      nrentg: Number(NRENTG),
-      total: 0,
-      recebido: 0,
-      status: "NAO_ENCONTRADA"
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json(err);
-  }
-});
+    const result = await executeQuery(sql, params);
 
-
-// 🔹 Rota /pagos (Consulta por Requisição)
-app.get("/pagamento-produto", async (req, res) => {
-  try {
-    const { CDFIL, CDPRO } = req.query;
-
-    if (!CDFIL || !CDPRO) {
-      return res.status(400).json({
-        error: "Parâmetros obrigatórios: CDFIL e CDPRO"
-      });
-    }
-
-    const sql = `
-      SELECT
-        cdfil,
-        cdpro,
-        SUM(vrtot) AS total,
-        SUM(COALESCE(vrrcb, 0)) AS recebido,
-        CASE
-          WHEN SUM(COALESCE(vrrcb, 0)) >= SUM(vrtot) THEN 'PAGA'
-          WHEN SUM(COALESCE(vrrcb, 0)) > 0 THEN 'PARCIAL'
-          ELSE 'NAO_PAGA'
-        END AS status
-      FROM fc31110
-      WHERE cdfil = ?
-        AND cdpro = ?
-      GROUP BY
-        cdfil,
-        cdpro
-    `;
-
-    const result = await executeQuery(sql, [
-      Number(CDFIL),
-      Number(CDPRO)
-    ]);
-
-    res.json(result.length ? result[0] : {
-      cdfil: Number(CDFIL),
-      cdpro: Number(CDPRO),
-      total: 0,
-      recebido: 0,
-      status: "NAO_ENCONTRADO"
+    res.json({
+      filtro: porEntrega
+        ? { tipo: "ENTREGA", nrentg: Number(NRENTG) }
+        : { tipo: "PRODUTO", cdfil: Number(CDFIL), cdpro: Number(CDPRO) },
+      total: result[0]?.TOTAL ?? 0,
+      recebido: result[0]?.RECEBIDO ?? 0,
+      status: result[0]?.STATUS ?? "NAO_ENCONTRADO"
     });
 
   } catch (err) {
