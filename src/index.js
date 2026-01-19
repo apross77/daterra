@@ -147,7 +147,7 @@ app.get("/pagos", async (req, res) => {
         ON b.cdfil = a.cdfil
        AND b.cdtml = a.cdtml
        AND b.nrcpm = a.nrcpm
-      WHERE 1=1
+      WHERE a.dtope >= current_date - 7 and 1=1
     `;
 
     const params = [];
