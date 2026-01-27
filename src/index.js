@@ -185,3 +185,46 @@ app.get("/pagos", async (req, res) => {
     res.status(500).json({ error: "Erro ao consultar pagamentos" });
   }
 });
+app.get("/linkpgto", async (req, res) => {
+  try {
+    const { NRORC } = req.query;
+
+    if (!NRORC) {
+      return res.status(400).json([]);
+    }
+
+    const sql = `
+      SELECT DISTINCT
+          a.NRPEDIDO,
+          a.ID,
+          a.DTAULTATUALIZACAOWEB,
+          e.NRORC,
+          CASE 
+              WHEN b.IDTIPOPAGAMENTO = 5 THEN 'PIX'
+              ELSE 'CARTAO'
+          END AS TIPOPGTO,
+          c.NOMEBANDEIRACARTAOWEB,
+          CASE 
+              WHEN d.ID_STATUS = 1 THEN 'PENDENTE'
+              ELSE 'PAGO'
+          END AS STATUS_PGTO,
+          a.VRLIQ
+      FROM FC0M100 e
+      INNER JOIN FC0M000 a ON a.ID = e.IDPEDIDO
+      LEFT JOIN FC0M800 b ON a.ID = b.IDPEDIDO
+      LEFT JOIN FC0M810 c ON b.ID = c.IDPAGAMENTO
+      LEFT JOIN FC0M840 d ON b.ID = d.ID_PAGAMENTO
+      WHERE e.NRORC = ?
+        AND a.DTAULTATUALIZACAOWEB >= CURRENT_DATE - 7
+    `;
+
+    const result = await executeQuery(sql, [NRORC]);
+
+    // 🔥 SEMPRE ARRAY
+    res.status(200).json(result);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json([]);
+  }
+});
