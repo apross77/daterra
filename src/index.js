@@ -132,43 +132,45 @@ app.get("/pagos", async (req, res) => {
     }
 
     let sql = `
-      SELECT
-          a.nrentg,
-          b.cdpro,
-          SUM(b.vrtot) AS valor_total,
-          a.vrrcb AS valor_recebido,
-          CAST(
-          CASE
-              WHEN COALESCE(a.vrrcb, 0) >= SUM(b.vrtot) THEN 'PAGA'
-              WHEN COALESCE(a.vrrcb, 0) > 0 THEN 'PARCIAL'
-              ELSE 'NAO_PAGA'
-          END VARCHAR(10)) AS STATUS
-      FROM fc31100 a
-      JOIN fc31110 b
-        ON b.cdfil = a.cdfil
-       AND b.cdtml = a.cdtml
-       AND b.nrcpm = a.nrcpm
-      WHERE a.dtope >= current_date - 7 and 1=1
-    `;
+SELECT
+    a.nrentg,
+    b.cdpro,
+    SUM(b.vrtot) AS valor_total,
+    a.vrrcb AS valor_recebido,
+    CAST(
+        CASE
+            WHEN COALESCE(a.vrrcb, 0) >= SUM(b.vrtot) THEN 'PAGA'
+            WHEN COALESCE(a.vrrcb, 0) > 0 THEN 'PARCIAL'
+            ELSE 'NAO_PAGA'
+        END
+    AS VARCHAR(10)) AS STATUS
+FROM fc31100 a
+JOIN fc31110 b
+  ON b.cdfil = a.cdfil
+ AND b.cdtml = a.cdtml
+ AND b.nrcpm = a.nrcpm
+WHERE a.dtope >= CURRENT_DATE - 7
+`;
 
-    const params = [];
+const params = [];
 
-    if (NRENTG) {
-      sql += " AND a.nrentg = CAST(? AS INTEGER)";
-      params.push(Number(NRENTG));
-    }
+if (NRENTG) {
+  sql += " AND a.nrentg = CAST(? AS INTEGER)";
+  params.push(Number(NRENTG));
+}
 
-    if (CDPRO) {
-      sql += " AND b.cdpro = CAST(? AS INTEGER)";
-      params.push(Number(CDPRO));
-    }
+if (CDPRO) {
+  sql += " AND b.cdpro = CAST(? AS INTEGER)";
+  params.push(Number(CDPRO));
+}
 
-    sql += `
-      GROUP BY
-          a.nrentg,
-          b.cdpro,
-          a.vrrcb
-    `;
+sql += `
+GROUP BY
+    a.nrentg,
+    b.cdpro,
+    a.vrrcb
+`;
+
 
     const result = await executeQuery(sql, params);
 
@@ -194,32 +196,39 @@ app.get("/linkpgto", async (req, res) => {
       return res.status(400).json([]);
     }
 
-    const sql = `
-      SELECT DISTINCT
-          a.NRPEDIDO,
-          a.ID,
-          a.DTAULTATUALIZACAOWEB,
-          e.NRORC,
-          CAST(
-          CASE 
-              WHEN b.IDTIPOPAGAMENTO = 5 THEN 'PIX'
-              ELSE 'CARTAO'
-          END VARCHAR(10)) AS TIPOPGTO,
-          CAST(TRIM(c.NOMEBANDEIRACARTAOWEB) AS VARCHAR(30)) AS NOMEBANDEIRACARTAOWEB,
-          CAST(
-          CASE 
-              WHEN d.ID_STATUS = 1 THEN 'PENDENTE'
-              ELSE 'PAGO'
-          END VARCHAR(10)) AS STATUS_PGTO,
-          a.VRLIQ
-      FROM FC0M100 e
-      INNER JOIN FC0M000 a ON a.ID = e.IDPEDIDO
-      LEFT JOIN FC0M800 b ON a.ID = b.IDPEDIDO
-      LEFT JOIN FC0M810 c ON b.ID = c.IDPAGAMENTO
-      LEFT JOIN FC0M840 d ON b.ID = d.ID_PAGAMENTO
-      WHERE e.NRORC = ?
-        AND a.DTAULTATUALIZACAOWEB >= CURRENT_DATE - 7
-    `;
+  const sql = `
+SELECT DISTINCT
+    a.NRPEDIDO,
+    a.ID,
+    a.DTAULTATUALIZACAOWEB,
+    e.NRORC,
+
+    CAST(
+        CASE 
+            WHEN b.IDTIPOPAGAMENTO = 5 THEN 'PIX'
+            ELSE 'CARTAO'
+        END
+    AS VARCHAR(10)) AS TIPOPGTO,
+
+    CAST(TRIM(c.NOMEBANDEIRACARTAOWEB) AS VARCHAR(30)) AS NOMEBANDEIRACARTAOWEB,
+
+    CAST(
+        CASE 
+            WHEN d.ID_STATUS = 1 THEN 'PENDENTE'
+            ELSE 'PAGO'
+        END
+    AS VARCHAR(10)) AS STATUS_PGTO,
+
+    a.VRLIQ
+FROM FC0M100 e
+INNER JOIN FC0M000 a ON a.ID = e.IDPEDIDO
+LEFT JOIN FC0M800 b ON a.ID = b.IDPEDIDO
+LEFT JOIN FC0M810 c ON b.ID = c.IDPAGAMENTO
+LEFT JOIN FC0M840 d ON b.ID = d.ID_PAGAMENTO
+WHERE e.NRORC = ?
+  AND a.DTAULTATUALIZACAOWEB >= CURRENT_DATE - 7
+`;
+
 
     const result = await executeQuery(sql, [NRORC]);
 
