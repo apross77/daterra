@@ -137,11 +137,12 @@ app.get("/pagos", async (req, res) => {
           b.cdpro,
           SUM(b.vrtot) AS valor_total,
           a.vrrcb AS valor_recebido,
+          CAST(
           CASE
               WHEN COALESCE(a.vrrcb, 0) >= SUM(b.vrtot) THEN 'PAGA'
               WHEN COALESCE(a.vrrcb, 0) > 0 THEN 'PARCIAL'
               ELSE 'NAO_PAGA'
-          END AS status
+          END VARCHAR(10)) AS STATUS
       FROM fc31100 a
       JOIN fc31110 b
         ON b.cdfil = a.cdfil
@@ -199,15 +200,17 @@ app.get("/linkpgto", async (req, res) => {
           a.ID,
           a.DTAULTATUALIZACAOWEB,
           e.NRORC,
+          CAST(
           CASE 
               WHEN b.IDTIPOPAGAMENTO = 5 THEN 'PIX'
               ELSE 'CARTAO'
-          END AS TIPOPGTO,
-          c.NOMEBANDEIRACARTAOWEB,
+          END VARCHAR(10)) AS TIPOPGTO,
+          CAST(TRIM(c.NOMEBANDEIRACARTAOWEB) AS VARCHAR(30)) AS NOMEBANDEIRACARTAOWEB,
+          CAST(
           CASE 
               WHEN d.ID_STATUS = 1 THEN 'PENDENTE'
               ELSE 'PAGO'
-          END AS STATUS_PGTO,
+          END VARCHAR(10)) AS STATUS_PGTO,
           a.VRLIQ
       FROM FC0M100 e
       INNER JOIN FC0M000 a ON a.ID = e.IDPEDIDO
